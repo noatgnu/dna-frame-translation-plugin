@@ -1,0 +1,213 @@
+plugin:
+  id: "dna-frame-translation"
+  name: "DNA/RNA Frame Translation"
+  description: "Translates DNA/RNA sequences to amino acid sequences using 3-frame or 6-frame translation. Supports custom start/stop codons or translation from position 0. Useful for proteogenomics, novel peptide discovery, and alternative splicing analysis."
+  version: "1.0.0"
+  author: "Toan Phung"
+  category: "proteomics"
+  subcategory: "sequence-analysis"
+  icon: "biotech"
+  repository: "https://github.com/noatgnu/dna-frame-translation-plugin"
+
+runtime:
+  environments: ["python"]
+  entrypoint: "translation_runner.py"
+
+inputs:
+  - name: "input_file"
+    label: "Input Sequence File"
+    type: "file"
+    required: true
+    accept: ".fasta,.fa,.fna,.csv,.tsv,.txt"
+    description: "File containing DNA/RNA sequences (FASTA or tabular format)"
+
+  - name: "input_format"
+    label: "Input Format"
+    type: "select"
+    required: true
+    default: "auto"
+    options:
+      - "auto"
+      - "fasta"
+      - "csv"
+      - "tsv"
+    description: "Format of input file. 'auto' detects based on file extension."
+
+  - name: "sequence_column"
+    label: "Sequence Column"
+    type: "text"
+    required: false
+    default: "sequence"
+    description: "Column name containing sequences (for tabular input)"
+    visibleWhen:
+      field: "input_format"
+      equalsAny: ["csv", "tsv"]
+
+  - name: "id_column"
+    label: "ID Column"
+    type: "text"
+    required: false
+    default: "gene"
+    description: "Column name for sequence identifiers (for tabular input)"
+    visibleWhen:
+      field: "input_format"
+      equalsAny: ["csv", "tsv"]
+
+  - name: "translation_mode"
+    label: "Translation Mode"
+    type: "select"
+    required: true
+    default: "six_frame"
+    options:
+      - "three_frame"
+      - "six_frame"
+    description: "3-frame (forward only) or 6-frame (forward + reverse complement)"
+
+  - name: "use_start_codons"
+    label: "Require Start Codon"
+    type: "boolean"
+    required: false
+    default: false
+    description: "If enabled, translation starts from specified start codons. If disabled, translates from position 0 in each frame."
+
+  - name: "start_codons"
+    label: "Start Codons"
+    type: "text"
+    required: false
+    default: "ATG"
+    placeholder: "ATG,GTG,CTG,TTG,ACG"
+    description: "Comma-separated list of start codons (standard: ATG; alternatives: GTG, CTG, TTG, ACG)"
+    visibleWhen:
+      field: "use_start_codons"
+      equals: true
+
+  - name: "use_stop_codons"
+    label: "Stop at Stop Codon"
+    type: "boolean"
+    required: false
+    default: true
+    description: "If enabled, translation stops at specified stop codons. If disabled, translates entire frame (stop codons become *)."
+
+  - name: "stop_codons"
+    label: "Stop Codons"
+    type: "text"
+    required: false
+    default: "TAA,TAG,TGA"
+    placeholder: "TAA,TAG,TGA"
+    description: "Comma-separated list of stop codons (standard: TAA, TAG, TGA)"
+    visibleWhen:
+      field: "use_stop_codons"
+      equals: true
+
+  - name: "min_length"
+    label: "Minimum Peptide Length"
+    type: "number"
+    required: false
+    default: 0
+    min: 0
+    max: 10000
+    step: 1
+    description: "Minimum amino acid length for output sequences (0 = no filter)"
+
+  - name: "max_length"
+    label: "Maximum Peptide Length"
+    type: "number"
+    required: false
+    default: 0
+    min: 0
+    max: 100000
+    step: 1
+    description: "Maximum amino acid length for output sequences (0 = no limit)"
+
+  - name: "genetic_code"
+    label: "Genetic Code Table"
+    type: "select"
+    required: false
+    default: "1"
+    options:
+      - "1"
+      - "2"
+      - "3"
+      - "4"
+      - "5"
+      - "6"
+      - "9"
+      - "10"
+      - "11"
+      - "12"
+      - "13"
+      - "14"
+      - "15"
+      - "16"
+      - "21"
+      - "22"
+      - "23"
+      - "24"
+      - "25"
+      - "26"
+      - "27"
+      - "28"
+      - "29"
+      - "30"
+      - "31"
+      - "32"
+      - "33"
+    description: "NCBI genetic code table: 1=Standard, 2=Vertebrate Mito, 3=Yeast Mito, 4=Mold Mito, 5=Invertebrate Mito, 6=Ciliate, 9=Echinoderm Mito, 10=Euplotid, 11=Bacterial, 12=Alt Yeast, 13=Ascidian Mito, 14=Alt Flatworm Mito, 15=Blepharisma, 16=Chlorophycean Mito, 21-33=Various specialized codes"
+
+outputs:
+  - name: "translated_sequences"
+    path: "translated_sequences.fasta"
+    type: "data"
+    description: "Translated amino acid sequences in FASTA format"
+    format: "fasta"
+
+  - name: "translation_summary"
+    path: "translation_summary.tsv"
+    type: "data"
+    description: "Summary table with sequence IDs, frames, lengths, and ORF positions"
+    format: "tsv"
+
+  - name: "translation_report"
+    path: "translation_report.txt"
+    type: "report"
+    description: "Summary statistics of the translation"
+    format: "txt"
+
+execution:
+  outputDir: "--output_dir"
+  argsMapping:
+    input_file: "--input_file"
+    input_format: "--input_format"
+    sequence_column: "--sequence_column"
+    id_column: "--id_column"
+    translation_mode: "--translation_mode"
+    use_start_codons:
+      flag: "--use_start_codons"
+      when: "true"
+    start_codons: "--start_codons"
+    use_stop_codons:
+      flag: "--use_stop_codons"
+      when: "true"
+    stop_codons: "--stop_codons"
+    min_length: "--min_length"
+    max_length: "--max_length"
+    genetic_code: "--genetic_code"
+  requirements:
+    python: ">=3.11"
+    pythonRequirementsFile: "requirements.txt"
+
+example:
+  enabled: true
+  values:
+    input_format: "auto"
+    translation_mode: "six_frame"
+    use_start_codons: false
+    start_codons: "ATG,GTG,CTG"
+    use_stop_codons: true
+    stop_codons: "TAA,TAG,TGA"
+    min_length: 20
+    max_length: 0
+    genetic_code: "1"
+
+diagram:
+  enabled: true
