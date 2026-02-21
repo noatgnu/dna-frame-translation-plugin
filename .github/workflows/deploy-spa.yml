@@ -16,7 +16,7 @@ concurrency:
 
 env:
   CAULDRON_VERSION: "master"
-  PYODIDE_VERSION: "0.25.0"
+  PYODIDE_VERSION: "0.29.3"
 
 jobs:
   build-spa:
@@ -35,7 +35,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -59,9 +59,9 @@ jobs:
         working-directory: spa
         run: npm install
 
-      - name: Build SPA
+      - name: Generate lock file and build SPA
         working-directory: spa
-        run: npm run build -- --base-href /${{ github.event.repository.name }}/
+        run: npm run build:ci -- --base-href /${{ github.event.repository.name }}/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
