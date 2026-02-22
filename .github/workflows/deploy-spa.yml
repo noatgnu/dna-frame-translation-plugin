@@ -53,11 +53,25 @@ jobs:
             --output ./spa \
             --skip-check \
             --no-build \
-            --pyodide-version ${{ env.PYODIDE_VERSION }}
+            --pyodide-version ${{ env.PYODIDE_VERSION }} \
+            --examples-dir ./examples:./cauldron-go/examples
 
       - name: Install SPA dependencies
         working-directory: spa
         run: npm install
+
+      - name: Run unit tests
+        working-directory: spa
+        run: npm run test:ci
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+
+      - name: Run integration tests with example
+        working-directory: spa
+        run: npm run test:ci:integration
+        continue-on-error: false
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
 
       - name: Generate lock file and build SPA
         working-directory: spa
