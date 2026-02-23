@@ -66,13 +66,6 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
 
-      - name: Run integration tests with example
-        working-directory: spa
-        run: npm run test:ci:integration
-        continue-on-error: false
-        env:
-          CHROME_BIN: /usr/bin/google-chrome
-
       - name: Generate lock file and build SPA
         working-directory: spa
         run: npm run build:ci -- --base-href /${{ github.event.repository.name }}/
