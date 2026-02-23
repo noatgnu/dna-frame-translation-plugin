@@ -230,7 +230,7 @@ execution:
     pythonRequirementsFile: "requirements.txt"
 
 example:
-  enabled: true
+  enabled: false
   values:
     input_format: "auto"
     translation_mode: "six_frame"
